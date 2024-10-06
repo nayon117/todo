@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { Trash2, PlusCircle, CheckCircle, Circle } from "lucide-react";
+import { Trash2, PlusCircle, CheckCircle, Circle, Pencil, X, Check } from "lucide-react";
 
 const Todo = () => {
   const [todo, setTodo] = useState("");
   const [todos, setTodos] = useState([]);
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editText, setEditText] = useState("");
 
   const addTodo = () => {
     if (todo.trim()) {
@@ -14,7 +16,13 @@ const Todo = () => {
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
-      addTodo();
+      if (editingIndex !== null) {
+        handleSaveEdit();
+      } else {
+        addTodo();
+      }
+    } else if (e.key === 'Escape' && editingIndex !== null) {
+      handleCancelEdit();
     }
   };
 
@@ -27,6 +35,26 @@ const Todo = () => {
   const deleteTodo = (index) => {
     const newTodos = todos.filter((_, i) => i !== index);
     setTodos(newTodos);
+  };
+
+  const startEditing = (index) => {
+    setEditingIndex(index);
+    setEditText(todos[index].text);
+  };
+
+  const handleSaveEdit = () => {
+    if (editText.trim() && editingIndex !== null) {
+      const newTodos = [...todos];
+      newTodos[editingIndex].text = editText.trim();
+      setTodos(newTodos);
+      setEditingIndex(null);
+      setEditText("");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingIndex(null);
+    setEditText("");
   };
 
   useEffect(() => {
@@ -43,7 +71,7 @@ const Todo = () => {
   }, [todos]);
 
   return (
-    <div className="min-h-screen  p-4 sm:p-6 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 to-pink-100 p-4 sm:p-6 md:p-8">
       <div className="max-w-md mx-auto bg-white/80 backdrop-blur-sm shadow-xl p-6 rounded-xl">
         <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
           Elegant Todo List
@@ -71,9 +99,6 @@ const Todo = () => {
             <li
               key={index}
               className="group flex items-center gap-3 p-3 bg-white rounded-lg shadow-sm border border-purple-100 transform transition-all duration-300 hover:shadow-md animate-[fadeIn_0.3s_ease-in-out]"
-              style={{
-                animation: `fadeIn 0.3s ease-in-out forwards`,
-              }}
             >
               <button
                 onClick={() => toggleCompleted(index)}
@@ -86,22 +111,57 @@ const Todo = () => {
                 )}
               </button>
               
-              <span
-                className={`flex-grow text-gray-700 transition-all duration-300 ${
-                  todo.completed
-                    ? "line-through text-gray-400"
-                    : "group-hover:text-purple-600"
-                }`}
-              >
-                {todo.text}
-              </span>
+              {editingIndex === index ? (
+                <div className="flex-grow flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    autoFocus
+                    className="flex-grow px-2 py-1 rounded border-2 border-purple-200 focus:border-purple-400 focus:outline-none"
+                  />
+                  <button
+                    onClick={handleSaveEdit}
+                    className="p-1 text-green-500 hover:text-green-600 transition-colors"
+                  >
+                    <Check className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    className="p-1 text-red-400 hover:text-red-500 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              ) : (
+                <span
+                  className={`flex-grow text-gray-700 transition-all duration-300 ${
+                    todo.completed
+                      ? "line-through text-gray-400"
+                      : "group-hover:text-purple-600"
+                  }`}
+                >
+                  {todo.text}
+                </span>
+              )}
               
-              <button
-                onClick={() => deleteTodo(index)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 focus:outline-none"
-              >
-                <Trash2 className="w-5 h-5 text-red-400 hover:text-red-500 transition-colors" />
-              </button>
+              {editingIndex !== index && (
+                <>
+                  <button
+                    onClick={() => startEditing(index)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-1 text-purple-400 hover:text-purple-600"
+                  >
+                    <Pencil className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={() => deleteTodo(index)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-1 text-red-400 hover:text-red-500"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </>
+              )}
             </li>
           ))}
         </ul>
